@@ -26,7 +26,7 @@ import math as _math
 from scipy.optimize import least_squares as _least_squares
 import numpy as _np
 
-VERSION_STR = "1.0.0a1"
+VERSION_STR = "1.0.0a2"
 
 class FittingMixin:
     """a mix-in class for enabling fitting.
