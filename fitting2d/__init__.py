@@ -26,7 +26,7 @@ import math as _math
 from scipy.optimize import least_squares as _least_squares
 import numpy as _np
 
-VERSION_STR = "1.0.0"
+VERSION_STR = "1.0.0a1"
 
 class FittingMixin:
     """a mix-in class for enabling fitting.
@@ -50,7 +50,7 @@ class FittingMixin:
 
     @classmethod
     def bounds(cls, **kwargs):
-        return (0, np.inf)
+        return (0, _np.inf)
 
     @classmethod
     def init(cls, xp, yp, **kwargs):
@@ -114,7 +114,7 @@ class Parabola(_namedtuple("_Parabola", ("xf", "yf", "phi", "L")),
         # [0,:] and [1,:] should contain the x- and y- coordinates
         return _np.matmul(self.rotation, p-f) + f
 
-class Ellipse(namedtuple("_Ellipse", ("xc", "yc", "A", "B", "phi")),
+class Ellipse(_namedtuple("_Ellipse", ("xc", "yc", "A", "B", "phi")),
                     FittingMixin):
     EPSILON = _np.array([[1e-3, 0],[0, 1e-3]]) # to avoid singularity of the matrix
 
@@ -127,13 +127,13 @@ class Ellipse(namedtuple("_Ellipse", ("xc", "yc", "A", "B", "phi")),
         if xsize >= ysize:
             phi = 0.0
         else:
-            phi = math.pi / 2
+            phi = _math.pi / 2
         return (xc, yc, 1.0, 1.0, phi)
 
     @classmethod
     def bounds(cls, **kwargs):
-        return ((-np.inf, -np.inf, 0, 0, -np.inf),
-                (np.inf, np.inf, np.inf, np.inf)) # (lower, upper)
+        return ((-_np.inf, -_np.inf, 0, 0, -_np.inf),
+                (_np.inf, _np.inf, _np.inf, _np.inf)) # (lower, upper)
 
     @classmethod
     def deviation(cls, x, xp, yp, **kwargs):
@@ -162,8 +162,8 @@ class Ellipse(namedtuple("_Ellipse", ("xc", "yc", "A", "B", "phi")),
             return _np.linalg.inv(M + self.EPSILON)
 
     def transform(self, xp, yp):
-    """returns a set of circular-standardized coordinates."""
-        if np.ndim(xp) == 0:
+        """returns a set of circular-standardized coordinates."""
+        if _np.ndim(xp) == 0:
             xp = (xp,)
             yp = (yp,)
         p = _np.stack([xp, yp], axis=0)
@@ -171,7 +171,7 @@ class Ellipse(namedtuple("_Ellipse", ("xc", "yc", "A", "B", "phi")),
         return _np.matmul(self.transformation, p-c)
 
     def angles(self, xp, yp):
-    """compute angular parameters for given (xp, yp)"""
+        """compute angular parameters for given (xp, yp)"""
         transformed = self.transform(xp, yp)
         out = _np.arctan2(transformed[1], transformed[0])
         if _np.ndim(xp) == 0:
