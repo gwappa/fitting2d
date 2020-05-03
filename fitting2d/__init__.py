@@ -26,7 +26,7 @@ import math as _math
 from scipy.optimize import least_squares as _least_squares
 import numpy as _np
 
-VERSION_STR = "1.0.0a2"
+VERSION_STR = "1.0.0a3"
 
 class FittingMixin:
     """a mix-in class for enabling fitting.
@@ -41,8 +41,12 @@ class FittingMixin:
     @classmethod
     def fit(cls, xp, yp, **kwargs):
         """performs fitting from a set of x- and y-coordinates, xp and yp."""
+        if "max_nfev" in kwargs.keys():
+            nfev = kwargs.pop("max_nfev")
+        else:
+            nfev = None
         opt = _least_squares(cls.deviation, x0=cls.init(xp, yp, **kwargs), args=(xp, yp),
-                             kwargs=kwargs, bounds=cls.bounds(**kwargs))
+                             kwargs=kwargs, bounds=cls.bounds(**kwargs), max_nfev=nfev)
         if opt["success"] == False:
             msg = opt["message"]
             raise RuntimeError(f"fitting of {cls.__name__} failed ({msg})")
@@ -66,23 +70,27 @@ class Parabola(_namedtuple("_Parabola", ("xf", "yf", "phi", "L")),
 
     from xp and yp: `model = Parabola2D.fit(xp, yp)`
     """
+
     @classmethod
     def init(cls, xp, yp, **kwargs):
-        return (_np.nanmean(xp), _np.nanmean(yp), 0.0, 1.0)
+        init_phi = kwargs.get("init_phi", _math.pi/2)
+        return (_np.nanmean(xp), _np.nanmean(yp), init_phi, 1.0)
 
     @classmethod
     def bounds(cls, **kwargs):
-        return ((-_np.inf, -_np.inf, -_np.inf, 0),
-                (_np.inf, _np.inf, _np.inf, _np.inf)) # (lower, upper)
+        xrng = kwargs.get("xrange", (-_np.inf, _np.inf))
+        yrng = kwargs.get("yrange", (-_np.inf, _np.inf))
+        return ((xrng[0], yrng[0], -_np.inf, 0),
+                (xrng[1], yrng[1], _np.inf, _np.inf)) # (lower, upper)
 
     @classmethod
     def deviation(cls, x, xp, yp, **kwargs):
         parabola = cls(*x)
-        p = _np.stack([xf,yp],axis=0)
+        p = _np.stack([xp,yp],axis=0)
         f = parabola.focus.reshape((2,1))
         u = parabola.axis.reshape((2,1))
-        r = (p - f).T
-        return _np.linalg.norm(r, axis=0) - _np.matmul(r,u) - parabola.L
+        r = p - f
+        return _np.linalg.norm(r, axis=0) - (r * u).sum(axis=0) - parabola.L
 
     @property
     def focus(self):
@@ -98,21 +106,20 @@ class Parabola(_namedtuple("_Parabola", ("xf", "yf", "phi", "L")),
     def rotation(self):
         """returns the rotation matrix for obtaining the rotation of this parabola
         from the "normal" parabola."""
-        c, s = _math.cos(phi), _math.sin(phi)
+        c, s = _math.cos(self.phi), _math.sin(self.phi)
         return _np.array([[s,c], [-c,s]])
 
     def draw(self, t):
         """`t` must be the coordinate parameter that is used as the x-coordinate
         to draw the "normal" parabola."""
-        d = self.L/2
         # draw the "normal" parabola
         xp = t
-        yp = d * (t - self.xf)**2 + self.yf - d
-        p  = _np.stack([x,y],axis=0)
+        yp = (1/(2*self.L)) * (t**2) - self.L/2
+        p  = _np.stack([xp,yp],axis=0)
         f  = self.focus.reshape((2,1))
         # translate/rotate to what it should be
         # [0,:] and [1,:] should contain the x- and y- coordinates
-        return _np.matmul(self.rotation, p-f) + f
+        return _np.matmul(self.rotation, p) + f
 
 class Ellipse(_namedtuple("_Ellipse", ("xc", "yc", "A", "B", "phi")),
                     FittingMixin):
@@ -133,11 +140,11 @@ class Ellipse(_namedtuple("_Ellipse", ("xc", "yc", "A", "B", "phi")),
     @classmethod
     def bounds(cls, **kwargs):
         return ((-_np.inf, -_np.inf, 0, 0, -_np.inf),
-                (_np.inf, _np.inf, _np.inf, _np.inf)) # (lower, upper)
+                (_np.inf, _np.inf, _np.inf, _np.inf, _np.inf)) # (lower, upper)
 
     @classmethod
     def deviation(cls, x, xp, yp, **kwargs):
-        return _np.linalg.norm(cls(*x).transform(xp, yp), axis=0) - 1
+        return (_np.linalg.norm(cls(*x).transform(xp, yp), axis=0) - 1)**2
 
     @property
     def center(self):
