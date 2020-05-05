@@ -21,6 +21,7 @@ pip install fitting2d
 Currently, it has only two types of fitting procedures as classes:
 
 - `Ellipse`
+- `Circle`
 - `Parabola`
 
 Both classes are built as `namedtuple`s.

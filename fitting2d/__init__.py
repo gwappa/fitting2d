@@ -26,7 +26,7 @@ import math as _math
 from scipy.optimize import least_squares as _least_squares
 import numpy as _np
 
-VERSION_STR = "1.0.0a3"
+VERSION_STR = "1.0.0a4"
 
 class FittingMixin:
     """a mix-in class for enabling fitting.
@@ -120,6 +120,40 @@ class Parabola(_namedtuple("_Parabola", ("xf", "yf", "phi", "L")),
         # translate/rotate to what it should be
         # [0,:] and [1,:] should contain the x- and y- coordinates
         return _np.matmul(self.rotation, p) + f
+
+class Circle(_namedtuple("_Circle", ("xc", "yc", "radius")),
+             FittingMixin):
+    @classmethod
+    def init(cls, xp, yp, **kwargs):
+        xc = xp.mean()
+        yc = yp.mean()
+        r  = _np.sqrt((xp - xc)**2 + (yp - yc)**2).mean()
+        return (xc, yc, r)
+
+    @classmethod
+    def bounds(cls, **kwargs):
+        return ((-_np.inf, -_np.inf, 0.0),
+                (_np.inf, _np.inf, _np.inf))
+
+    @classmethod
+    def deviation(cls, x, xp, yp, **kwargs):
+        circle = cls(*x)
+        return (xp - circle.xc)**2 + (yp - circle.yc)**2 - circle.radius**2
+
+    def compute_radius(self, xp, yp):
+        return _np.sqrt((xp - self.xc)**2 + (yp - self.yc)**2)
+
+    def compute_angles(self, xp, yp):
+        return _np.arctan2(yp - self.yc, xp - self.xc)
+
+    @property
+    def center(self):
+        return _np.array([self.xc, self.yc])
+
+    def draw(self, angles):
+        """angles in radians"""
+        return _np.stack([_np.cos(angles), _np.sin(angles)],
+                         axis=0) * self.radius + self.center.reshape((2,1))
 
 class Ellipse(_namedtuple("_Ellipse", ("xc", "yc", "A", "B", "phi")),
                     FittingMixin):
