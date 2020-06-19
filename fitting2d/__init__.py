@@ -189,7 +189,7 @@ class Ellipse(_namedtuple("_Ellipse", ("xc", "yc", "A", "B", "phi")),
         """returns a matrix M^{-1}, consisting of the
         semi-major and -minor axis vectors."""
         c, s = _math.cos(self.phi), _math.sin(self.phi)
-        return _np.array([[self.A * c, self.B * s],
+        return _np.array([[self.A * c, -self.B * s],
                          [self.A * s, self.B * c]])
 
     @property
@@ -211,7 +211,7 @@ class Ellipse(_namedtuple("_Ellipse", ("xc", "yc", "A", "B", "phi")),
         c = self.center.reshape((2,1))
         return _np.matmul(self.transformation, p-c)
 
-    def angles(self, xp, yp):
+    def compute_phases(self, xp, yp):
         """compute angular parameters for given (xp, yp)"""
         transformed = self.transform(xp, yp)
         out = _np.arctan2(transformed[1], transformed[0])
