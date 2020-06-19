@@ -16,6 +16,8 @@ pip install fitting2d
 
 ## Usage
 
+For more detailed documentation, visit our [documentation page](https://fitting2d.readthedocs.io/en/latest/).
+
 ### Classes
 
 Currently, it has only two types of fitting procedures as classes:

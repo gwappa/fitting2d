@@ -33,7 +33,7 @@ setuptools.setup(
     description='a library for performing two-dimensional curve-fitting',
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url='https://github.com/gwappa/fitting2d',
+    url='https://fitting2d.readthedocs.io/en/latest/',
     author='Keisuke Sehara',
     author_email='keisuke.sehara@gmail.com',
     license='MIT',
